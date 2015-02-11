@@ -15,8 +15,8 @@
  * nr_file rlimit, so it's safe to set up a ridiculously high absolute
  * upper limit on files-per-process.
  *
- * Some programs (notably those using select()) may have to be 
- * recompiled to take full advantage of the new limits..  
+ * Some programs (notably those using select()) may have to be
+ * recompiled to take full advantage of the new limits..
  */
 
 /* Fixed constants first: */
@@ -89,7 +89,7 @@ extern int dir_notify_enable;
 #define SEL_EX		4
 
 /* public flags for file_system_type */
-#define FS_REQUIRES_DEV 1 
+#define FS_REQUIRES_DEV 1
 #define FS_BINARY_MOUNTDATA 2
 #define FS_REVAL_DOT	16384	/* Check the paths ".", ".." for staleness */
 #define FS_ODD_RENAME	32768	/* Temporary stuff; will go away as soon
@@ -313,7 +313,7 @@ struct iattr {
  */
 #include <linux/quota.h>
 
-/** 
+/**
  * enum positive_aop_returns - aop return codes with specific semantics
  *
  * @AOP_WRITEPAGE_ACTIVATE: Informs the caller that page writeback has
@@ -323,7 +323,7 @@ struct iattr {
  * 			    be a candidate for writeback again in the near
  * 			    future.  Other callers must be careful to unlock
  * 			    the page if they get this return.  Returned by
- * 			    writepage(); 
+ * 			    writepage();
  *
  * @AOP_TRUNCATED_PAGE: The AOP method that was handed a locked page has
  *  			unlocked it and the page might have been truncated.
@@ -710,10 +710,10 @@ extern spinlock_t files_lock;
 
 #define	MAX_NON_LFS	((1UL<<31) - 1)
 
-/* Page cache limit. The filesystems should put that into their s_maxbytes 
-   limits, otherwise bad things can happen in VM. */ 
+/* Page cache limit. The filesystems should put that into their s_maxbytes
+   limits, otherwise bad things can happen in VM. */
 #if BITS_PER_LONG==32
-#define MAX_LFS_FILESIZE	(((u64)PAGE_CACHE_SIZE << (BITS_PER_LONG-1))-1) 
+#define MAX_LFS_FILESIZE	(((u64)PAGE_CACHE_SIZE << (BITS_PER_LONG-1))-1)
 #elif BITS_PER_LONG==64
 #define MAX_LFS_FILESIZE 	0x7fffffffffffffffUL
 #endif
@@ -1126,7 +1126,7 @@ struct super_operations {
 	void (*destroy_inode)(struct inode *);
 
 	void (*read_inode) (struct inode *);
-  
+
    	void (*dirty_inode) (struct inode *);
 	int (*write_inode) (struct inode *, int);
 	void (*put_inode) (struct inode *);
@@ -1308,13 +1308,24 @@ find_exported_dentry(struct super_block *sb, void *obj, void *parent,
 		     void *context);
 
 struct file_system_type {
+    //filesystem name
 	const char *name;
+	//FS_REQUIRES_DEV: Every filesystem of this type must be located on a physical disk device.
+    //FS_BINARY_MOUNTDATA: The filesystem uses binary mount data.
+    //FS_REVAL_DOT: Always revalidate the “.” and “..” paths in the dentry cache (for network filesystems).
+    //FS_ODD_RENAME: “Rename” operations are “move” operations (for network filesystems).
 	int fs_flags;
+	// allocates a new superblock object and initializes it
+	// if necessary, by reading a disk
 	int (*get_sb) (struct file_system_type *, int,
 		       const char *, void *, struct vfsmount *);
+	//method for removing a superblock
 	void (*kill_sb) (struct super_block *);
+	// pointer to the module implementint the filesystem
 	struct module *owner;
+	// pointer to the next element in the list of filesystem types
 	struct file_system_type * next;
+	// head of a list of superblock objects having the same filesystem type
 	struct list_head fs_supers;
 	struct lock_class_key s_lock_key;
 	struct lock_class_key s_umount_key;
@@ -1570,7 +1581,7 @@ extern int may_open(struct nameidata *, int, int);
 
 extern int kernel_read(struct file *, unsigned long, char *, unsigned long);
 extern struct file * open_exec(const char *);
- 
+
 /* fs/dcache.c -- generic fs support functions */
 extern int is_subdir(struct dentry *, struct dentry *);
 extern ino_t find_inode_number(struct dentry *, struct qstr *);
@@ -1604,7 +1615,7 @@ extern void unlock_new_inode(struct inode *);
 static inline struct inode *iget(struct super_block *sb, unsigned long ino)
 {
 	struct inode *inode = iget_locked(sb, ino);
-	
+
 	if (inode && (inode->i_state & I_NEW)) {
 		sb->s_op->read_inode(inode);
 		unlock_new_inode(inode);
@@ -1673,9 +1684,9 @@ extern long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
 
 extern void
 file_ra_state_init(struct file_ra_state *ra, struct address_space *mapping);
-extern ssize_t generic_file_readv(struct file *filp, const struct iovec *iov, 
+extern ssize_t generic_file_readv(struct file *filp, const struct iovec *iov,
 	unsigned long nr_segs, loff_t *ppos);
-ssize_t generic_file_writev(struct file *filp, const struct iovec *iov, 
+ssize_t generic_file_writev(struct file *filp, const struct iovec *iov,
 			unsigned long nr_segs, loff_t *ppos);
 extern loff_t no_llseek(struct file *file, loff_t offset, int origin);
 extern loff_t generic_file_llseek(struct file *file, loff_t offset, int origin);

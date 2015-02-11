@@ -59,11 +59,11 @@ static struct file_system_type **find_filesystem(const char *name)
  *	is aware of for mount and other syscalls. Returns 0 on success,
  *	or a negative errno code on an error.
  *
- *	The &struct file_system_type that is passed is linked into the kernel 
+ *	The &struct file_system_type that is passed is linked into the kernel
  *	structures and must not be freed until the file system has been
  *	unregistered.
  */
- 
+
 int register_filesystem(struct file_system_type * fs)
 {
 	int res = 0;
@@ -93,11 +93,11 @@ EXPORT_SYMBOL(register_filesystem);
  *	Remove a file system that was previously successfully registered
  *	with the kernel. An error is returned if the file system is not found.
  *	Zero is returned on a success.
- *	
+ *
  *	Once this function has returned the &struct file_system_type structure
  *	may be freed or reused.
  */
- 
+
 int unregister_filesystem(struct file_system_type * fs)
 {
 	struct file_system_type ** tmp;
@@ -176,7 +176,7 @@ static int fs_maxindex(void)
 }
 
 /*
- * Whee.. Weird sysv syscall. 
+ * Whee.. Weird sysv syscall.
  */
 asmlinkage long sys_sysfs(int option, unsigned long arg1, unsigned long arg2)
 {
@@ -214,6 +214,12 @@ int get_filesystem_list(char * buf)
 	read_unlock(&file_systems_lock);
 	return len;
 }
+
+/*
+ * The get_fs_type( ) function, which receives a filesystem name as its parameter,
+ * scans the list of registered filesystems looking at the name field of their descriptors,
+ * and returns a pointer to the corresponding file_system_type object, if it is present.
+ * /
 
 struct file_system_type *get_fs_type(const char *name)
 {

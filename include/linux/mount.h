@@ -1,6 +1,6 @@
 /*
  *
- * Definitions for mount interface. This describes the in the kernel build 
+ * Definitions for mount interface. This describes the in the kernel build
  * linkedlist with mounted filesystems.
  *
  * Author:  Marco van Wieringen <mvw@planets.elm.net>
@@ -35,23 +35,38 @@ struct namespace;
 #define MNT_PNODE_MASK	0x3000	/* propogation flag mask */
 
 struct vfsmount {
+    //pointers for the hash table list
 	struct list_head mnt_hash;
+	//pointers to the parent filesystem on which this filesystem is mounted
 	struct vfsmount *mnt_parent;	/* fs we are mounted on */
+	//pointers to the dentry of the mount point directory where the filesystem
+	//is mounted
 	struct dentry *mnt_mountpoint;	/* dentry of mountpoint */
+	//pointers to the dentry of the root directory of this filesystem
 	struct dentry *mnt_root;	/* root of the mounted tree */
+	//pointers to the superblock object of this filesystem
 	struct super_block *mnt_sb;	/* pointer to superblock */
+	//head of a list including all filesystem descriptors mounted on directories
+	//of this filesystem
 	struct list_head mnt_mounts;	/* list of children, anchored here */
+	//pointers for the mnt_mounts list of mounted filesystem descriptors
 	struct list_head mnt_child;	/* and going through their mnt_child */
+	//usage counter(increased to forbid filesystem unmounting)
 	atomic_t mnt_count;
 	int mnt_flags;
+	//flag set to true if the filesystem is marked as expired
+	//(the filesystem can be automatically umounted if the flag is set and no
+	//one is using it)
 	int mnt_expiry_mark;		/* true if marked for expiry */
 	char *mnt_devname;		/* Name of device e.g. /dev/dsk/hda1 */
+	//pointers for namespace's list of mounted filesystem descriptors
 	struct list_head mnt_list;
 	struct list_head mnt_expire;	/* link in fs-specific expiry list */
 	struct list_head mnt_share;	/* circular list of shared mounts */
 	struct list_head mnt_slave_list;/* list of slave mounts */
 	struct list_head mnt_slave;	/* slave list entry */
 	struct vfsmount *mnt_master;	/* slave is on master->mnt_slave_list */
+	//pointer to the namespace of the process that a mounted the filesystem
 	struct namespace *mnt_namespace; /* containing namespace */
 	int mnt_pinned;
 };

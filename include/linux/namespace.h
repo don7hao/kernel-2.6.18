@@ -6,8 +6,12 @@
 #include <linux/sched.h>
 
 struct namespace {
+    //usage counter(how many processes share the namespace)
 	atomic_t		count;
+	//represents the root of the tree of mounted filesystems of this namespace
 	struct vfsmount *	root;
+	//the head of a doubly linked circular list collecting all mounted
+	//filesystem that belong to the namespace.
 	struct list_head	list;
 	wait_queue_head_t poll;
 	int event;
