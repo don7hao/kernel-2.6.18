@@ -853,6 +853,10 @@ static int attach_recursive_mnt(struct vfsmount *source_mnt,
 	return 0;
 }
 
+/*
+ * Invokes graft_tree() to insert the new mounted filesystem object in the namespace list, in the hash table,
+ * and in the children list of the parent-mounted filesystem.
+ */
 static int graft_tree(struct vfsmount *mnt, struct nameidata *nd)
 {
 	int err;
@@ -1079,6 +1083,10 @@ static int do_new_mount(struct nameidata *nd, char *type, int flags,
 	if (!capable(CAP_SYS_ADMIN))
 		return -EPERM;
 
+    /*
+     * takes care of the actual mount operation and
+     * returns the address of a new mounted filesystem descriptor
+     */
 	mnt = do_kern_mount(type, flags, name, data);
 	if (IS_ERR(mnt))
 		return PTR_ERR(mnt);
@@ -1437,6 +1445,10 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
 	else if (flags & MS_MOVE)
 		retval = do_move_mount(&nd, dev_name);
 	else
+	    /*
+	     * It is triggered when the user asks to mount either a special filesystem
+	     * or a regular filesystem stored in a disk partition.
+	     */
 		retval = do_new_mount(&nd, type_page, flags, mnt_flags,
 				      dev_name, data_page);
 dput_out:
@@ -1547,6 +1559,12 @@ out:
 	return err;
 }
 
+/*
+ * The sys_mount( ) function copies the value of the parameters into temporary kernel
+ * buffers, acquires the big kernel lock, and invokes the do_mount() function. Once do_
+ * mount() returns, the service routine releases the big kernel lock and frees the tempo-
+ * rary kernel buffers.
+ */
 asmlinkage long sys_mount(char __user * dev_name, char __user * dir_name,
 			  char __user * type, unsigned long flags,
 			  void __user * data)

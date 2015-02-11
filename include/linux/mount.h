@@ -53,6 +53,13 @@ struct vfsmount {
 	struct list_head mnt_child;	/* and going through their mnt_child */
 	//usage counter(increased to forbid filesystem unmounting)
 	atomic_t mnt_count;
+    /*
+     * The mnt_flags field of the descriptor stores the value of several flags that
+     * specify how some kinds of files in the mounted filesystem are handled.
+     * MNT_NOSUID : Forbid setuid and setgid flags in the mounted filesystem
+     * MNT_NODEV : Forbid access to device files in the mounted filesystem
+     * MNT_NOEXEC : Disallow program execution in the mounted filesystem
+     */
 	int mnt_flags;
 	//flag set to true if the filesystem is marked as expired
 	//(the filesystem can be automatically umounted if the flag is set and no

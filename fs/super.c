@@ -308,7 +308,7 @@ retry:
 			return ERR_PTR(-ENOMEM);
 		goto retry;
 	}
-		
+
 	err = set(s, data);
 	if (err) {
 		spin_unlock(&sb_lock);
@@ -425,7 +425,7 @@ restart:
 /**
  *	get_super - get the superblock of a device
  *	@bdev: device to get the superblock for
- *	
+ *
  *	Scans the superblock list and finds the superblock of the file system
  *	mounted on the device given. %NULL is returned if no match is found.
  */
@@ -458,7 +458,7 @@ rescan:
 }
 
 EXPORT_SYMBOL(get_super);
- 
+
 struct super_block * user_get_super(dev_t dev)
 {
 	struct super_block *sb;
@@ -539,7 +539,7 @@ static void mark_files_ro(struct super_block *sb)
 int do_remount_sb(struct super_block *sb, int flags, void *data, int force)
 {
 	int retval;
-	
+
 	if (!(flags & MS_RDONLY) && bdev_read_only(sb->s_bdev))
 		return -EACCES;
 	if (flags & MS_RDONLY)
@@ -839,6 +839,9 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void 
 			goto out_free_secdata;
 	}
 
+    /*
+     * get_sb() filesystem-dependent function to allocate a new superblock and to initialize it
+     */
 	error = type->get_sb(type, flags, name, data, mnt);
 	if (error < 0)
 		goto out_free_secdata;
