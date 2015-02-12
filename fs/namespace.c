@@ -1353,6 +1353,7 @@ int copy_mount_options(const void __user * data, unsigned long *where)
 	if (!data)
 		return 0;
 
+    // 返回一个指向新页的指针, 但是没有清零该页
 	if (!(page = __get_free_page(GFP_KERNEL)))
 		return -ENOMEM;
 
