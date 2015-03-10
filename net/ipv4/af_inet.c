@@ -412,6 +412,7 @@ int inet_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	if (addr_len < sizeof(struct sockaddr_in))
 		goto out;
 
+    /* check the IP address type in the socket address */
 	chk_addr_ret = inet_addr_type(addr->sin_addr.s_addr);
 
 	/* Not specified by any standard per-se, however it breaks too
@@ -422,6 +423,9 @@ int inet_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	 *  is temporarily down)
 	 */
 	err = -EADDRNOTAVAIL;
+	/* sysctl_ip_nonlocal_bind is a control parameter that controls
+	 * the 'binding behavior' of the sockets.
+	 */
 	if (!sysctl_ip_nonlocal_bind &&
 	    !inet->freebind &&
 	    addr->sin_addr.s_addr != INADDR_ANY &&
@@ -432,6 +436,11 @@ int inet_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 
 	snum = ntohs(addr->sin_port);
 	err = -EACCES;
+	/*
+	 * Now the nonprivileged application can also have permissions to avail some of the super - user facilities.
+	 * We can check this capability of the current process by calling capable() and passing capability number to it.
+	 *
+	 */
 	if (snum && snum < PROT_SOCK && !capable(CAP_NET_BIND_SERVICE))
 		goto out;
 
@@ -446,14 +455,23 @@ int inet_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 
 	/* Check these errors (active socket, double bind). */
 	err = -EINVAL;
+	/*
+	 * 若sk_state不是TCP_CLOSE,说明该sk已经绑定，现在正在尝试再次绑定
+	 * sk->num is set to a value greater than 0 only in caseof SOCK_RAW
+	 */
 	if (sk->sk_state != TCP_CLOSE || inet->num)
 		goto out_release_sock;
 
+    //IP address is of type multicast or broadcast,sk->saddr to 0
 	inet->rcv_saddr = inet->saddr = addr->sin_addr.s_addr;
 	if (chk_addr_ret == RTN_MULTICAST || chk_addr_ret == RTN_BROADCAST)
 		inet->saddr = 0;  /* Use device */
 
-	/* Make sure we are allowed to bind here. */
+	/*
+	 * Make sure we are allowed to bind here.
+	 * Is the address already use by another socket?
+	 * tcp_v4_get_port() from tcp_pro
+	 * */
 	if (sk->sk_prot->get_port(sk, snum)) {
 		inet->saddr = inet->rcv_saddr = 0;
 		err = -EADDRINUSE;
@@ -898,7 +916,7 @@ static struct inet_protosw inetsw_array[] =
                 .no_check =   UDP_CSUM_DEFAULT,
                 .flags =      INET_PROTOSW_PERMANENT,
        },
-        
+
 
        {
                .type =       SOCK_RAW,
@@ -946,7 +964,7 @@ void inet_register_protosw(struct inet_protosw *p)
 	/* Add the new entry after the last permanent entry if any, so that
 	 * the new entry does not override a permanent entry when matched with
 	 * a wild-card protocol. But it is allowed to override any existing
-	 * non-permanent entry.  This means that when we remove this entry, the 
+	 * non-permanent entry.  This means that when we remove this entry, the
 	 * system automatically returns to the old behavior.
 	 */
 	list_add_rcu(&p->list, last_perm);
@@ -1073,7 +1091,7 @@ int inet_sk_rebuild_header(struct sock *sk)
 			},
 		},
 	};
-						
+
 	err = ip_route_output_flow(&rt, &fl, sk, 0);
 }
 	if (!err)
@@ -1272,7 +1290,7 @@ static int __init inet_init(void)
 		goto out_unregister_udp_proto;
 
 	/*
-	 *	Tell SOCKET that we are alive... 
+	 *	Tell SOCKET that we are alive...
 	 */
 
   	(void)sock_register(&inet_family_ops);
@@ -1331,11 +1349,11 @@ static int __init inet_init(void)
 #endif
 	/*
 	 *	Initialise per-cpu ipv4 mibs
-	 */ 
+	 */
 
 	if(init_ipv4_mibs())
 		printk(KERN_CRIT "inet_init: Cannot init ipv4 mibs\n"); ;
-	
+
 	ipv4_proc_init();
 
 	ipfrag_init();
