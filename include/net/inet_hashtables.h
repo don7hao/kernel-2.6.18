@@ -75,8 +75,14 @@ struct inet_ehash_bucket {
  */
 struct inet_bind_bucket {
 	unsigned short		port;
+	/*
+	 * This is the fl ag that indicates whether the port number that is already in use can be reused by a new socket.
+	 */
 	signed short		fastreuse;
 	struct hlist_node	node;
+	/*
+	 * this is the list of the sockets that are using same port number.
+	 */
 	struct hlist_head	owners;
 };
 
