@@ -78,24 +78,30 @@ int inet_csk_get_port(struct inet_hashinfo *hashinfo,
 	int ret;
 
 	local_bh_disable();
-	if (!snum) {
+	if (!snum) {/* snum等于0，没有指定端口号 */
 		int low = sysctl_local_port_range[0];
 		int high = sysctl_local_port_range[1];
 		int remaining = (high - low) + 1;
+		/* 随机选择一个端口号 */
 		int rover = net_random() % (high - low) + low;
 
 		do {
 			head = &hashinfo->bhash[inet_bhashfn(rover, hashinfo->bhash_size)];
 			spin_lock(&head->lock);
 			inet_bind_bucket_for_each(tb, node, &head->chain)
-				if (tb->port == rover)
+				if (tb->port == rover) /* 端口号已占用 */
 					goto next;
 			break;
 		next:
 			spin_unlock(&head->lock);
-			if (++rover > high)
+			if (++rover > high)/* 自加后再去检测hash */
 				rover = low;
 		} while (--remaining > 0);
+		/*
+		 * 跳出循环的情况：
+		 * 1. Either we have exhausted the entire port numbers (all are in use)
+		 * 2. Or we have found one unused port number.
+		 */
 
 		/* Exhausted local port range during search?  It is not
 		 * possible for us to be holding one of the bind hash
@@ -104,14 +110,12 @@ int inet_csk_get_port(struct inet_hashinfo *hashinfo,
 		 * the top level, not from the 'break;' statement.
 		 */
 		ret = 1;
-		if (remaining <= 0)
+		if (remaining <= 0)/* 端口号从low到(low-high)+1都已经检测完 */
 			goto fail;
 
-		/* OK, here is the one we will use.  HEAD is
-		 * non-NULL and we hold it's mutex.
-		 */
+		/* OK, here is the one we will use.  HEAD is non-NULL and we hold it's mutex. */
 		snum = rover;
-	} else {
+	} else {/* 端口号已指定 */
 		head = &hashinfo->bhash[inet_bhashfn(snum, hashinfo->bhash_size)];
 		spin_lock(&head->lock);
 		inet_bind_bucket_for_each(tb, node, &head->chain)
@@ -135,10 +139,11 @@ tb_found:
 	}
 tb_not_found:
 	ret = 1;
+	/* create an entry in the hash table tcp_bhash for the new port number allocation.*/
 	if (!tb && (tb = inet_bind_bucket_create(hashinfo->bind_bucket_cachep, head, snum)) == NULL)
 		goto fail_unlock;
 	if (hlist_empty(&tb->owners)) {
-		if (sk->sk_reuse && sk->sk_state != TCP_LISTEN)
+		if (sk->sk_reuse && sk->sk_state != TCP_LISTEN/* not in listening state */)
 			tb->fastreuse = 1;
 		else
 			tb->fastreuse = 0;
@@ -146,6 +151,7 @@ tb_not_found:
 		   (!sk->sk_reuse || sk->sk_state == TCP_LISTEN))
 		tb->fastreuse = 0;
 success:
+    /* 端口号与当前socket进行绑定 */
 	if (!inet_csk(sk)->icsk_bind_hash)
 		inet_bind_hash(sk, tb, snum);
 	BUG_TRAP(inet_csk(sk)->icsk_bind_hash == tb);
@@ -255,7 +261,7 @@ EXPORT_SYMBOL(inet_csk_accept);
 
 /*
  * Using different timers for retransmit, delayed acks and probes
- * We may wish use just one timer maintaining a list of expire jiffies 
+ * We may wish use just one timer maintaining a list of expire jiffies
  * to optimize.
  */
 void inet_csk_init_xmit_timers(struct sock *sk,
@@ -273,7 +279,7 @@ void inet_csk_init_xmit_timers(struct sock *sk,
 	icsk->icsk_delack_timer.function     = delack_handler;
 	sk->sk_timer.function		     = keepalive_handler;
 
-	icsk->icsk_retransmit_timer.data = 
+	icsk->icsk_retransmit_timer.data =
 		icsk->icsk_delack_timer.data =
 			sk->sk_timer.data  = (unsigned long)sk;
 

@@ -470,7 +470,7 @@ int inet_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	/*
 	 * Make sure we are allowed to bind here.
 	 * Is the address already use by another socket?
-	 * tcp_v4_get_port() from tcp_pro
+	 * tcp_v4_get_port() from tcp_prot
 	 * */
 	if (sk->sk_prot->get_port(sk, snum)) {
 		inet->saddr = inet->rcv_saddr = 0;
