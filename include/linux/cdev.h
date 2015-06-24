@@ -2,6 +2,11 @@
 #define _LINUX_CDEV_H
 #ifdef __KERNEL__
 
+/*
+ * owner：该设备的驱动程序所属的内核模块，一般设置为THIS_MODULE；
+ * ops：文件操作结构体指针，file_operations结构体中包含一系列对设备进行操作的函数接口；
+ * dev：设备号。dev_t封装了unsigned int，该类型前12位为主设备号，后20位为次设备号；
+ */
 struct cdev {
 	struct kobject kobj;
 	struct module *owner;
