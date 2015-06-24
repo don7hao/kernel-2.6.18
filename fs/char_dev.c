@@ -29,10 +29,10 @@ static struct kobj_map *cdev_map;
 static DEFINE_MUTEX(chrdevs_lock);
 
 static struct char_device_struct {
-	struct char_device_struct *next;
-	unsigned int major;
-	unsigned int baseminor;
-	int minorct;
+	struct char_device_struct *next; /*next字段就是冲突链表中的下一个元素的指针*/
+	unsigned int major; /*主设备号*/
+	unsigned int baseminor;/*次设备好*/
+	int minorct;/*次设备号范围*/
 	char name[64];
 	struct file_operations *fops;
 	struct cdev *cdev;		/* will die */
@@ -86,6 +86,7 @@ __register_chrdev_region(unsigned int major, unsigned int baseminor,
 	mutex_lock(&chrdevs_lock);
 
 	/* temporary */
+	/*如果major为0，也就是未指定一个具体的主设备号，需要动态分配*/
 	if (major == 0) {
 		for (i = ARRAY_SIZE(chrdevs)-1; i > 0; i--) {
 			if (chrdevs[i] == NULL)
@@ -111,6 +112,8 @@ __register_chrdev_region(unsigned int major, unsigned int baseminor,
 		if ((*cp)->major > major ||
 		    ((*cp)->major == major && (*cp)->baseminor >= baseminor))
 			break;
+	/*检查当前的次设备号范围，即baseminor~baseminor+minorct，
+	 * 是否和之前的已分配的次设备号（前提是major相同）范围有重叠*/
 	if (*cp && (*cp)->major == major &&
 	    (*cp)->baseminor < baseminor + minorct) {
 		ret = -EBUSY;
@@ -154,6 +157,7 @@ int register_chrdev_region(dev_t from, unsigned count, const char *name)
 
 	for (n = from; n < to; n = next) {
 		next = MKDEV(MAJOR(n)+1, 0);
+		//判断在from的基础上再追加count个设备是否已经溢出到下一个主设备号
 		if (next > to)
 			next = to;
 		cd = __register_chrdev_region(MAJOR(n), MINOR(n),
@@ -215,7 +219,7 @@ int register_chrdev(unsigned int major, const char *name,
 	cd = __register_chrdev_region(major, 0, 256, name);
 	if (IS_ERR(cd))
 		return PTR_ERR(cd);
-	
+
 	cdev = cdev_alloc();
 	if (!cdev)
 		goto out2;
@@ -225,7 +229,7 @@ int register_chrdev(unsigned int major, const char *name,
 	kobject_set_name(&cdev->kobj, "%s", name);
 	for (s = strchr(kobject_name(&cdev->kobj),'/'); s; s = strchr(s, '/'))
 		*s = '!';
-		
+
 	err = cdev_add(cdev, MKDEV(cd->major, 0), 256);
 	if (err)
 		goto out;
