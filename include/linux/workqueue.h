@@ -12,12 +12,12 @@
 struct workqueue_struct;
 
 struct work_struct {
-	unsigned long pending;
-	struct list_head entry;
-	void (*func)(void *);
-	void *data;
-	void *wq_data;
-	struct timer_list timer;
+	unsigned long pending;//这个工作是否正在等待处理
+	struct list_head entry;//链接所有工作的链表，形成工作队列
+	void (*func)(void *);//处理函数
+	void *data;//传递给处理函数的参数
+	void *wq_data;//内部使用数据
+	struct timer_list timer;//延迟的工作队列所用到的定时器
 };
 
 struct execute_work {
