@@ -65,10 +65,17 @@
 #define SA_TRIGGER_MASK		IRQF_TRIGGER_MASK
 
 struct irqaction {
+    //指向一个具体的硬件设备的中断处理程序
 	irqreturn_t (*handler)(int, void *, struct pt_regs *);
+	//对应request_irq函数中所传递的第三个参数
+	//IRQF_DISABLED, IRQF_SAMPLE_RANDOM，IRQF_SHARED
 	unsigned long flags;
 	cpumask_t mask;
+	//对应于request_irq函数中所传递的第四个参数，
+	//可通过/proc/interrupts文件查看到
 	const char *name;
+	//对应于request_irq函数中所传递的第五个参数，可取任意值，
+	//但必须唯一能够代表发出中断请求的设备，通常取描述该设备的结构体
 	void *dev_id;
 	struct irqaction *next;
 	int irq;
@@ -290,7 +297,7 @@ static inline int tasklet_trylock(struct tasklet_struct *t)
 
 static inline void tasklet_unlock(struct tasklet_struct *t)
 {
-	smp_mb__before_clear_bit(); 
+	smp_mb__before_clear_bit();
 	clear_bit(TASKLET_STATE_RUN, &(t)->state);
 }
 
@@ -379,7 +386,7 @@ extern void tasklet_init(struct tasklet_struct *t,
  * if more than one irq occurred.
  */
 
-#if defined(CONFIG_GENERIC_HARDIRQS) && !defined(CONFIG_GENERIC_IRQ_PROBE) 
+#if defined(CONFIG_GENERIC_HARDIRQS) && !defined(CONFIG_GENERIC_IRQ_PROBE)
 static inline unsigned long probe_irq_on(void)
 {
 	return 0;

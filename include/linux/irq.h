@@ -84,11 +84,23 @@ struct proc_dir_entry;
  * @release:		release function solely used by UML
  * @typename:		obsoleted by name, kept as migration helper
  */
+/*
+ * struct irq_chip是一个中断控制器的描述符。
+ * 通常不同的体系结构就有一套自己的中断处理方式。
+ * 内核为了统一的处理中断，提供了底层的中断处理抽象接口，
+ * 对于每个平台都需要实现底层的接口函数。
+ * 这样对于上层的中断通用处理程序就无需任何改动
+ */
 struct irq_chip {
+    //中断控制器名字
 	const char	*name;
+	//启动中断线
 	unsigned int	(*startup)(unsigned int irq);
+	//关闭中断线
 	void		(*shutdown)(unsigned int irq);
+	//允许中断
 	void		(*enable)(unsigned int irq);
+	//禁止中断
 	void		(*disable)(unsigned int irq);
 
 	void		(*ack)(unsigned int irq);
@@ -139,18 +151,28 @@ struct irq_chip {
  * Pad this out to 32 bytes for cache and indexing reasons.
  */
 struct irq_desc {
+    //指向该IRQ线的公共服务程序
 	void fastcall		(*handle_irq)(unsigned int irq,
 					      struct irq_desc *desc,
 					      struct pt_regs *regs);
+	//是中断控制器的描述符，与平台有关
 	struct irq_chip		*chip;
+	//handle_irq的参数
 	void			*handler_data;
+	//用于chip的参数
 	void			*chip_data;
+	//指向一个链表，该链表是由该中断线上所有中断服务程序
+	//(struct irqaction)所连接起来的
 	struct irqaction	*action;	/* IRQ action list */
+	//描述中断线当前的状态
 	unsigned int		status;		/* IRQ status */
 
+    //0为中断线被激活，其值为正数时，表示被禁止的次数
 	unsigned int		depth;		/* nested irq disables */
 	unsigned int		wake_depth;	/* nested wake enables */
+	//记录该中断线发生中断的次数
 	unsigned int		irq_count;	/* For detecting broken IRQs */
+	//该IRQ线上未处理中断发生的次数
 	unsigned int		irqs_unhandled;
 	spinlock_t		lock;
 #ifdef CONFIG_SMP
